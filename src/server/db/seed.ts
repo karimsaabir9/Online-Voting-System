@@ -3,21 +3,50 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 /**
- * Full implementation lands in the Auth phase, once Better Auth is wired up
- * and can hash the admin password correctly. For now this only validates the
- * env vars it will need, so the wiring is visibly ready but not silently
- * incomplete.
+ * The imports below are deliberately dynamic (loaded inside `main`, after
+ * `config()` has run) rather than static top-level imports. `tsx` transpiles
+ * this file to CommonJS, and empirically its transform hoists static
+ * `import` statements ahead of the `config({ path: ".env.local" })` call
+ * whenever this file also touches a path-aliased module (`@/server/auth/config`)
+ * — which meant `./index` (and therefore `DATABASE_URL`) was evaluated before
+ * `.env.local` had been loaded, regardless of source order. Deferring every
+ * import until inside the async `main()` function guarantees `config()` has
+ * already run by the time any of these modules are evaluated.
  */
 async function main() {
-  if (!process.env.ADMIN_SEED_EMAIL || !process.env.ADMIN_SEED_PASSWORD) {
+  const email = process.env.ADMIN_SEED_EMAIL;
+  const password = process.env.ADMIN_SEED_PASSWORD;
+
+  if (!email || !password) {
     throw new Error(
       "ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD must be set in .env.local"
     );
   }
 
-  console.log(
-    "Admin seeding is not implemented yet — it lands in the Auth phase, once Better Auth can hash the password."
-  );
+  const { eq } = await import("drizzle-orm");
+  const { db } = await import("./index");
+  const { user } = await import("./schema");
+  const { auth } = await import("@/server/auth/config");
+
+  const existing = await db.query.user.findFirst({
+    where: eq(user.email, email),
+  });
+
+  if (existing) {
+    console.log(`Admin user ${email} already exists — skipping.`);
+    return;
+  }
+
+  await auth.api.signUpEmail({
+    body: { email, password, name: "Admin" },
+  });
+
+  await db
+    .update(user)
+    .set({ role: "admin", status: "active", emailVerified: true })
+    .where(eq(user.email, email));
+
+  console.log(`Admin user ${email} created.`);
 }
 
 main()
