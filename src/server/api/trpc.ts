@@ -1,15 +1,15 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 
 import { db } from "@/server/db";
+import { auth } from "@/server/auth/config";
 
-/**
- * Session will be added here in the Auth phase — kept as a documented
- * placeholder now so routers written later don't need a context shape change.
- */
 export async function createTRPCContext(opts: { headers: Headers }) {
+  const session = await auth.api.getSession({ headers: opts.headers });
+
   return {
     db,
+    session,
     headers: opts.headers,
   };
 }
@@ -22,3 +22,24 @@ const t = initTRPC.context<Context>().create({
 
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
+
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session || ctx.session.user.status !== "active") {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+    },
+  });
+});
+
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.session.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+
+  return next({ ctx });
+});
