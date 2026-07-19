@@ -13,7 +13,7 @@ export default async function VoterLayout({
     redirect("/login")
   }
   if (session.user.status !== "active") {
-    redirect("/login?error=suspended")
+    redirect("/suspended")
   }
   if (session.user.role !== "voter") {
     redirect("/admin/dashboard")

@@ -13,7 +13,7 @@ export default async function AdminLayout({
     redirect("/login")
   }
   if (session.user.status !== "active") {
-    redirect("/login?error=suspended")
+    redirect("/suspended")
   }
   if (session.user.role !== "admin") {
     redirect("/voter/dashboard")
