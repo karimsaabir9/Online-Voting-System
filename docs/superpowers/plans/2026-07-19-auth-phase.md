@@ -261,7 +261,8 @@ git commit -m "Add auth email templates and send helpers"
 
 **Interfaces:**
 - Consumes: `db` from `@/server/db`, `user`/`session`/`account`/`verification` from `@/server/db/schema`, `sendVerificationEmail`/`sendPasswordResetEmail` from `@/features/auth/emails/send-auth-emails` (Task 2).
-- Produces: `auth` (the `betterAuth()` instance) from `@/server/auth/config`; a working `/api/auth/*` route; `authClient` and re-exported `useSession`, `signIn`, `signUp`, `signOut`, `forgetPassword`, `resetPassword`, `changePassword` from `@/lib/auth-client`.
+- Produces: `auth` (the `betterAuth()` instance) from `@/server/auth/config`; a working `/api/auth/*` route; `authClient` and re-exported `useSession`, `signIn`, `signUp`, `signOut`, `requestPasswordReset`, `resetPassword`, `changePassword` from `@/lib/auth-client`.
+- **Correction after Task 3 implementation (installed `better-auth@1.6.23`):** the brief below originally showed `inferAdditionalFieldsClient` and `forgetPassword` — the actual installed API uses `inferAdditionalFields` (from `better-auth/client/plugins`) and `requestPasswordReset`. The code blocks in this task and Task 9 have been corrected to match what's actually installed.
 
 - [ ] **Step 1: Install better-auth**
 
@@ -354,12 +355,12 @@ Save as `src/app/api/auth/[...all]/route.ts`.
 
 ```ts
 import { createAuthClient } from "better-auth/react";
-import { inferAdditionalFieldsClient } from "better-auth/client/plugins";
+import { inferAdditionalFields } from "better-auth/client/plugins";
 
 import type { auth } from "@/server/auth/config";
 
 export const authClient = createAuthClient({
-  plugins: [inferAdditionalFieldsClient<typeof auth>()],
+  plugins: [inferAdditionalFields<typeof auth>()],
 });
 
 export const {
@@ -367,7 +368,7 @@ export const {
   signIn,
   signUp,
   signOut,
-  forgetPassword,
+  requestPasswordReset,
   resetPassword,
   changePassword,
 } = authClient;
@@ -990,7 +991,7 @@ Save as `src/app/(auth)/login/page.tsx`.
 - [ ] **Step 4: Verify it compiles**
 
 Run: `pnpm exec tsc --noEmit -p tsconfig.json`
-Expected: no output (zero errors). If `data.user.role` errors as not existing on the type, re-check Task 3 Step 5 — the client must include the `inferAdditionalFieldsClient<typeof auth>()` plugin for `role`/`status` to be typed on `data.user`.
+Expected: no output (zero errors). If `data.user.role` errors as not existing on the type, re-check Task 3 Step 5 — the client must include the `inferAdditionalFields<typeof auth>()` plugin for `role`/`status` to be typed on `data.user`.
 
 - [ ] **Step 5: Verify in the browser**
 
@@ -1325,7 +1326,7 @@ export function ForgotPasswordForm() {
   async function onSubmit(values: ForgotPasswordInput) {
     setIsSubmitting(true)
 
-    const { error } = await authClient.forgetPassword({
+    const { error } = await authClient.requestPasswordReset({
       email: values.email,
       redirectTo: "/reset-password",
     })
