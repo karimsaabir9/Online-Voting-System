@@ -3,5 +3,11 @@ allowBuilds:
   sharp: true
 ignoredBuiltDependencies:
   - unrs-resolver
+# Pins the whole tree to a single zod copy. Without this, shadcn's transitive
+# zod-to-json-schema/@modelcontextprotocol/sdk chain pulls in a stale zod@3.x
+# that gets hoisted ahead of our real zod@4.x and breaks zodResolver's types.
+# Safe today because shadcn is dev-only tooling; if a future *runtime*
+# dependency ever hard-requires zod v3, this override would silently force
+# it onto v4 instead — re-check before widening its scope.
 overrides:
   zod: ^4.4.3

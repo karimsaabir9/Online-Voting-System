@@ -33,11 +33,11 @@ export default async function Home() {
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Foundation is up and running.
+          Secure, transparent voting — online.
         </h1>
         <p className="text-muted-foreground max-w-md text-sm">
-          Project scaffold, UI kit, and theming are wired. The rest of the
-          system is built out phase by phase.
+          Register as a voter or log in to view active elections and cast
+          your vote.
         </p>
         <HealthStatus />
       </main>
