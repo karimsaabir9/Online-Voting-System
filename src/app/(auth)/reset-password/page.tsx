@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { ResetPasswordForm } from "@/features/auth/components/reset-password-form"
 import {
   Card,
@@ -15,7 +16,9 @@ export default function ResetPasswordPage() {
         <CardDescription>Choose a new password for your account.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResetPasswordForm />
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading...</p>}>
+          <ResetPasswordForm />
+        </Suspense>
       </CardContent>
     </Card>
   )
