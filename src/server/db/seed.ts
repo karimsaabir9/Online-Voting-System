@@ -7,8 +7,10 @@ config({ path: ".env.local" });
  * `config()` has run) rather than static top-level imports. `tsx` transpiles
  * this file to CommonJS, and empirically its transform hoists static
  * `import` statements ahead of the `config({ path: ".env.local" })` call
- * whenever this file also touches a path-aliased module (`@/server/auth/config`)
- * — which meant `./index` (and therefore `DATABASE_URL`) was evaluated before
+ * once `src/server/auth/config` (which itself imports `db`) is anywhere in
+ * the static import graph — reproduced with both the `@/` alias and a plain
+ * relative import, so it isn't alias-resolution specific. The net effect is
+ * that `./index` (and therefore `DATABASE_URL`) got evaluated before
  * `.env.local` had been loaded, regardless of source order. Deferring every
  * import until inside the async `main()` function guarantees `config()` has
  * already run by the time any of these modules are evaluated.
