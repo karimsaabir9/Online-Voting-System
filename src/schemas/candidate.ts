@@ -2,12 +2,17 @@ import { z } from "zod";
 
 export const candidateStatusValues = ["active", "withdrawn"] as const;
 
+const optionalUrl = z.union([
+  z.literal(""),
+  z.url({ protocol: /^https?$/, message: "Enter a valid http(s) URL" }),
+]);
+
 export const socialLinksSchema = z.object({
-  website: z.string().optional(),
-  twitter: z.string().optional(),
-  facebook: z.string().optional(),
-  instagram: z.string().optional(),
-  linkedin: z.string().optional(),
+  website: optionalUrl.optional(),
+  twitter: optionalUrl.optional(),
+  facebook: optionalUrl.optional(),
+  instagram: optionalUrl.optional(),
+  linkedin: optionalUrl.optional(),
 });
 
 export const candidateFieldsSchema = z.object({
