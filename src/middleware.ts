@@ -1,14 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-const AUTH_PAGES = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-];
-
 export function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
@@ -17,15 +9,17 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/voter") ||
     pathname.startsWith("/settings");
-  const isAuthPage = AUTH_PAGES.some((page) => pathname.startsWith(page));
 
   if (isProtected && !sessionCookie) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isAuthPage && sessionCookie) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  // Auth pages (/login, /register, etc.) intentionally do NOT redirect on
+  // cookie presence here — a stale-but-present cookie would trap an
+  // already-logged-out-server-side user in a redirect loop with no way to
+  // reach the login form. The (auth) layout does the real, DB-backed check
+  // instead (mirrors src/app/page.tsx), redirecting only truly active
+  // sessions away from these pages.
 
   return NextResponse.next();
 }
