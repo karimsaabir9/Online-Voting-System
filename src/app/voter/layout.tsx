@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { getServerSession } from "@/server/auth/get-session"
+import { VoterNav } from "@/features/voting/components/voter-nav"
 
 export default async function VoterLayout({
   children,
@@ -19,5 +20,10 @@ export default async function VoterLayout({
     redirect("/admin/dashboard")
   }
 
-  return <>{children}</>
+  return (
+    <div className="flex flex-1 flex-col">
+      <VoterNav />
+      <main className="flex flex-1 flex-col">{children}</main>
+    </div>
+  )
 }
