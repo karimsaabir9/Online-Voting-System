@@ -6,6 +6,7 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { elections, candidates, votes } from "@/server/db/schema";
 import { getEffectiveStatus } from "@/lib/election-status";
 import { getClientIp } from "@/lib/request-info";
+import { computeElectionResults } from "@/server/results";
 
 export const votingRouter = createTRPCRouter({
   listElections: protectedProcedure.query(async ({ ctx }) => {
@@ -133,5 +134,30 @@ export const votingRouter = createTRPCRouter({
         }
         throw error;
       }
+    }),
+
+  getResults: protectedProcedure
+    .input(z.object({ electionId: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const election = await ctx.db.query.elections.findFirst({
+        where: eq(elections.id, input.electionId),
+      });
+
+      if (
+        !election ||
+        election.visibility !== "public" ||
+        election.status === "draft" ||
+        !election.resultsPublished
+      ) {
+        return { published: false as const };
+      }
+
+      const results = await computeElectionResults(ctx.db, input.electionId);
+
+      if (!results) {
+        return { published: false as const };
+      }
+
+      return { published: true as const, results };
     }),
 });
