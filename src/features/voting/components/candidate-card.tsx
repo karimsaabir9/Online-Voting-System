@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CandidateProfileDialog } from "./candidate-profile-dialog"
@@ -39,7 +40,10 @@ export function CandidateCard({ candidate }: { candidate: Candidate }) {
           <AvatarFallback>{candidate.fullName.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-semibold">{candidate.fullName}</p>
+          <p className="flex items-center justify-center gap-2 font-semibold">
+            {candidate.fullName}
+            {candidate.status === "withdrawn" && <Badge variant="outline">Withdrawn</Badge>}
+          </p>
           {candidate.politicalParty && (
             <p className="text-muted-foreground text-sm">{candidate.politicalParty}</p>
           )}
