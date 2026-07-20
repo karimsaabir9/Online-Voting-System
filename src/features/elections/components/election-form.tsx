@@ -86,6 +86,7 @@ export function ElectionForm({ election }: ElectionFormProps) {
       await utils.elections.list.invalidate()
       if (election) await utils.elections.getById.invalidate({ id: election.id })
       toast.success("Election updated")
+      router.refresh()
     },
     onError: (error) => toast.error(error.message),
   })
