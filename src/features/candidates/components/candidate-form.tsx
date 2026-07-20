@@ -97,6 +97,7 @@ export function CandidateForm({ electionId, candidate }: CandidateFormProps) {
       await utils.candidates.list.invalidate({ electionId })
       if (candidate) await utils.candidates.getById.invalidate({ id: candidate.id })
       toast.success("Candidate updated")
+      router.refresh()
     },
     onError: (error) => toast.error(error.message),
   })
