@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { elections, candidates, votes } from "@/server/db/schema";
 import { getEffectiveStatus } from "@/lib/election-status";
+import { getClientIp } from "@/lib/request-info";
 
 export const votingRouter = createTRPCRouter({
   listElections: protectedProcedure.query(async ({ ctx }) => {
@@ -62,4 +63,75 @@ export const votingRouter = createTRPCRouter({
 
     return rows;
   }),
+
+  castVote: protectedProcedure
+    .input(z.object({ electionId: z.uuid(), candidateId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const election = await ctx.db.query.elections.findFirst({
+        where: eq(elections.id, input.electionId),
+      });
+
+      if (!election || election.visibility !== "public") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
+      }
+
+      if (getEffectiveStatus(election) !== "active") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This election is not currently open for voting",
+        });
+      }
+
+      const candidate = await ctx.db.query.candidates.findFirst({
+        where: eq(candidates.id, input.candidateId),
+      });
+
+      if (
+        !candidate ||
+        candidate.electionId !== input.electionId ||
+        candidate.status !== "active"
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid candidate for this election",
+        });
+      }
+
+      const existingVote = await ctx.db.query.votes.findFirst({
+        where: and(
+          eq(votes.electionId, input.electionId),
+          eq(votes.userId, ctx.session.user.id)
+        ),
+      });
+
+      if (existingVote) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "You have already voted in this election",
+        });
+      }
+
+      try {
+        const [vote] = await ctx.db
+          .insert(votes)
+          .values({
+            electionId: input.electionId,
+            candidateId: input.candidateId,
+            userId: ctx.session.user.id,
+            ipAddress: getClientIp(ctx.headers),
+            deviceInfo: ctx.headers.get("user-agent"),
+          })
+          .returning();
+
+        return vote;
+      } catch (error) {
+        if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "You have already voted in this election",
+          });
+        }
+        throw error;
+      }
+    }),
 });
