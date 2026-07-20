@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
 import { elections } from "@/server/db/schema";
 import { createElectionSchema, updateElectionSchema } from "@/schemas/election";
+import { computeElectionResults } from "@/server/results";
 
 const POSTGRES_FK_RESTRICT_CODE = "23503";
 
@@ -192,5 +193,49 @@ export const electionsRouter = createTRPCRouter({
         }
         throw error;
       }
+    }),
+
+  getResults: adminProcedure
+    .input(z.object({ electionId: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const results = await computeElectionResults(ctx.db, input.electionId);
+
+      if (!results) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
+      }
+
+      return results;
+    }),
+
+  publishResults: adminProcedure
+    .input(z.object({ id: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [election] = await ctx.db
+        .update(elections)
+        .set({ resultsPublished: true })
+        .where(eq(elections.id, input.id))
+        .returning();
+
+      if (!election) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
+      }
+
+      return election;
+    }),
+
+  hideResults: adminProcedure
+    .input(z.object({ id: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [election] = await ctx.db
+        .update(elections)
+        .set({ resultsPublished: false })
+        .where(eq(elections.id, input.id))
+        .returning();
+
+      if (!election) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
+      }
+
+      return election;
     }),
 });
