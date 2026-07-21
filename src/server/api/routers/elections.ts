@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { eq, count, and, ilike } from "drizzle-orm";
+import { eq, count, and, or, ilike, gte, lte } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
-import { elections } from "@/server/db/schema";
+import { elections, votes, user } from "@/server/db/schema";
 import { createElectionSchema, updateElectionSchema } from "@/schemas/election";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
@@ -273,4 +273,59 @@ export const electionsRouter = createTRPCRouter({
 
       return election;
     }),
+
+  dashboardStats: adminProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+    const endingSoonThreshold = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+    const [
+      totalElectionsRow,
+      activeElectionsRow,
+      totalVotesRow,
+      totalVotersRow,
+      endingSoon,
+      resultsNotPublished,
+      recentActivity,
+    ] = await Promise.all([
+      ctx.db.select({ value: count() }).from(elections),
+      ctx.db
+        .select({ value: count() })
+        .from(elections)
+        .where(effectiveStatusCondition("active", now)),
+      ctx.db.select({ value: count() }).from(votes),
+      ctx.db.select({ value: count() }).from(user).where(eq(user.role, "voter")),
+      ctx.db
+        .select({ id: elections.id, title: elections.title, endDate: elections.endDate })
+        .from(elections)
+        .where(
+          and(
+            effectiveStatusCondition("active", now),
+            lte(elections.endDate, endingSoonThreshold)
+          )
+        ),
+      ctx.db
+        .select({ id: elections.id, title: elections.title, status: elections.status })
+        .from(elections)
+        .where(
+          and(
+            eq(elections.resultsPublished, false),
+            or(effectiveStatusCondition("ended", now), eq(elections.status, "closed"))
+          )
+        ),
+      ctx.db.query.activityLogs.findMany({
+        orderBy: (fields, { desc }) => [desc(fields.createdAt)],
+        limit: 10,
+      }),
+    ]);
+
+    return {
+      totalElections: totalElectionsRow[0].value,
+      activeElections: activeElectionsRow[0].value,
+      totalVotesCast: totalVotesRow[0].value,
+      totalVoters: totalVotersRow[0].value,
+      endingSoon,
+      resultsNotPublished,
+      recentActivity,
+    };
+  }),
 });
