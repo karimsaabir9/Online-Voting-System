@@ -46,3 +46,14 @@ export const changePasswordSchema = z
     path: ["confirmPassword"],
   });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  image: z.string().optional(),
+});
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const changeEmailSchema = z.object({
+  newEmail: z.email("Enter a valid email address"),
+});
+export type ChangeEmailInput = z.infer<typeof changeEmailSchema>;
