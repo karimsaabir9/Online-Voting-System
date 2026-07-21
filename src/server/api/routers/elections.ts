@@ -7,6 +7,7 @@ import { elections } from "@/server/db/schema";
 import { createElectionSchema, updateElectionSchema } from "@/schemas/election";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
+import { logActivity } from "@/server/activity-log";
 
 function toWriteValues(input: {
   title: string;
@@ -89,6 +90,12 @@ export const electionsRouter = createTRPCRouter({
       })
       .returning();
 
+    await logActivity(ctx.db, {
+      userId: ctx.session.user.id,
+      action: "election.created",
+      description: `Created election "${election.title}"`,
+    });
+
     return election;
   }),
 
@@ -134,6 +141,12 @@ export const electionsRouter = createTRPCRouter({
         .where(eq(elections.id, input.id))
         .returning();
 
+      await logActivity(ctx.db, {
+        userId: ctx.session.user.id,
+        action: "election.published",
+        description: `Published election "${updated.title}"`,
+      });
+
       return updated;
     }),
 
@@ -161,6 +174,12 @@ export const electionsRouter = createTRPCRouter({
         .where(eq(elections.id, input.id))
         .returning();
 
+      await logActivity(ctx.db, {
+        userId: ctx.session.user.id,
+        action: "election.closed",
+        description: `Closed election "${updated.title}"`,
+      });
+
       return updated;
     }),
 
@@ -176,6 +195,12 @@ export const electionsRouter = createTRPCRouter({
         if (!deleted) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
         }
+
+        await logActivity(ctx.db, {
+          userId: ctx.session.user.id,
+          action: "election.deleted",
+          description: `Deleted election "${deleted.title}"`,
+        });
 
         return deleted;
       } catch (error) {

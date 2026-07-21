@@ -6,6 +6,7 @@ import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
 import { candidates } from "@/server/db/schema";
 import { createCandidateSchema, updateCandidateSchema } from "@/schemas/candidate";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
+import { logActivity } from "@/server/activity-log";
 
 function toWriteValues(input: {
   fullName: string;
@@ -91,6 +92,12 @@ export const candidatesRouter = createTRPCRouter({
       })
       .returning();
 
+    await logActivity(ctx.db, {
+      userId: ctx.session.user.id,
+      action: "candidate.created",
+      description: `Added candidate "${candidate.fullName}"`,
+    });
+
     return candidate;
   }),
 
@@ -120,6 +127,12 @@ export const candidatesRouter = createTRPCRouter({
         if (!deleted) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Candidate not found" });
         }
+
+        await logActivity(ctx.db, {
+          userId: ctx.session.user.id,
+          action: "candidate.deleted",
+          description: `Removed candidate "${deleted.fullName}"`,
+        });
 
         return deleted;
       } catch (error) {

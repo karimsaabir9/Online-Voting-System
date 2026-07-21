@@ -8,6 +8,7 @@ import { getEffectiveStatus } from "@/lib/election-status";
 import { getClientIp } from "@/lib/request-info";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
+import { logActivity } from "@/server/activity-log";
 
 export const votingRouter = createTRPCRouter({
   listElections: protectedProcedure.query(async ({ ctx }) => {
@@ -124,6 +125,12 @@ export const votingRouter = createTRPCRouter({
             deviceInfo: ctx.headers.get("user-agent"),
           })
           .returning();
+
+        await logActivity(ctx.db, {
+          userId: null,
+          action: "vote.cast",
+          description: `A vote was cast in "${election.title}"`,
+        });
 
         return vote;
       } catch (error) {
