@@ -5,8 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
 import { candidates } from "@/server/db/schema";
 import { createCandidateSchema, updateCandidateSchema } from "@/schemas/candidate";
-
-const POSTGRES_FK_RESTRICT_CODE = "23503";
+import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
 
 function toWriteValues(input: {
   fullName: string;
@@ -124,12 +123,7 @@ export const candidatesRouter = createTRPCRouter({
 
         return deleted;
       } catch (error) {
-        if (
-          error &&
-          typeof error === "object" &&
-          "code" in error &&
-          error.code === POSTGRES_FK_RESTRICT_CODE
-        ) {
+        if (getPostgresErrorCode(error) === POSTGRES_ERROR_CODES.RESTRICT_VIOLATION) {
           throw new TRPCError({
             code: "CONFLICT",
             message: "Cannot delete a candidate that already has votes",

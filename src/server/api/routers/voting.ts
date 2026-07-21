@@ -7,6 +7,7 @@ import { elections, candidates, votes } from "@/server/db/schema";
 import { getEffectiveStatus } from "@/lib/election-status";
 import { getClientIp } from "@/lib/request-info";
 import { computeElectionResults } from "@/server/results";
+import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
 
 export const votingRouter = createTRPCRouter({
   listElections: protectedProcedure.query(async ({ ctx }) => {
@@ -126,7 +127,7 @@ export const votingRouter = createTRPCRouter({
 
         return vote;
       } catch (error) {
-        if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+        if (getPostgresErrorCode(error) === POSTGRES_ERROR_CODES.UNIQUE_VIOLATION) {
           throw new TRPCError({
             code: "CONFLICT",
             message: "You have already voted in this election",
