@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne, gte, lte, notInArray, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
@@ -143,6 +143,55 @@ export const votingRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  dashboard: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    const now = new Date();
+
+    const votedRows = await ctx.db
+      .select({ electionId: votes.electionId })
+      .from(votes)
+      .where(eq(votes.userId, userId));
+    const votedIds = votedRows.map((row) => row.electionId);
+
+    const openElectionsConditions = [
+      eq(elections.visibility, "public"),
+      ne(elections.status, "draft"),
+      ne(elections.status, "closed"),
+      lte(elections.startDate, now),
+      gte(elections.endDate, now),
+    ];
+    if (votedIds.length > 0) {
+      openElectionsConditions.push(notInArray(elections.id, votedIds));
+    }
+
+    const [openElections, recentPublishedResults] = await Promise.all([
+      ctx.db.query.elections.findMany({
+        where: and(...openElectionsConditions),
+        orderBy: (fields, { asc }) => [asc(fields.endDate)],
+      }),
+      votedIds.length > 0
+        ? ctx.db.query.elections.findMany({
+            where: and(inArray(elections.id, votedIds), eq(elections.resultsPublished, true)),
+            orderBy: (fields, { desc }) => [desc(fields.updatedAt)],
+            limit: 5,
+          })
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      openElections: openElections.map((election) => ({
+        id: election.id,
+        title: election.title,
+        endDate: election.endDate,
+      })),
+      votedCount: votedIds.length,
+      recentPublishedResults: recentPublishedResults.map((election) => ({
+        id: election.id,
+        title: election.title,
+      })),
+    };
+  }),
 
   getResults: protectedProcedure
     .input(z.object({ electionId: z.uuid() }))

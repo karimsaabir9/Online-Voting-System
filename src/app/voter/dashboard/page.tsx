@@ -2,6 +2,7 @@ import Link from "next/link"
 import { History, Vote } from "lucide-react"
 
 import { getServerSession } from "@/server/auth/get-session"
+import { VoterDashboardContent } from "@/features/dashboard/components/voter-dashboard-content"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -14,6 +15,7 @@ export default async function VoterDashboardPage() {
         <h1 className="text-2xl font-semibold">Welcome, {session?.user.name}</h1>
         <p className="text-muted-foreground text-sm">{session?.user.email}</p>
       </div>
+      <VoterDashboardContent />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
