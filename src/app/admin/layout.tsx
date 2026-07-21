@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { getServerSession } from "@/server/auth/get-session"
+import { AdminNav } from "@/features/admin/components/admin-nav"
 
 export default async function AdminLayout({
   children,
@@ -19,5 +20,10 @@ export default async function AdminLayout({
     redirect("/voter/dashboard")
   }
 
-  return <>{children}</>
+  return (
+    <div className="flex flex-1 flex-col">
+      <AdminNav />
+      <main className="flex flex-1 flex-col">{children}</main>
+    </div>
+  )
 }
