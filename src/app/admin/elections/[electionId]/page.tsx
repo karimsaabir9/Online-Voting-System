@@ -8,6 +8,7 @@ import { elections } from "@/server/db/schema"
 import { ElectionForm } from "@/features/elections/components/election-form"
 import { ElectionStatusBadge } from "@/features/elections/components/election-status-badge"
 import { CandidatesTable } from "@/features/candidates/components/candidates-table"
+import { AdminResultsSection } from "@/features/results/components/admin-results-section"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -47,6 +48,10 @@ export default async function EditElectionPage({
         </Button>
       </div>
       <CandidatesTable electionId={election.id} />
+
+      <Separator />
+
+      <AdminResultsSection electionId={election.id} />
     </div>
   )
 }
