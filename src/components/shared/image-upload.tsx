@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
 type ImageUploadProps = {
-  folder: "elections/banners" | "candidates/photos"
+  folder: "elections/banners" | "candidates/photos" | "users/avatars"
   value?: string
   onChange: (url: string) => void
 }
