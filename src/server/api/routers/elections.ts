@@ -3,7 +3,7 @@ import { eq, count, and, or, ilike, gte, lte } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
-import { elections, votes, user } from "@/server/db/schema";
+import { elections, votes, user, notifications } from "@/server/db/schema";
 import { createElectionSchema, updateElectionSchema } from "@/schemas/election";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
@@ -253,6 +253,23 @@ export const electionsRouter = createTRPCRouter({
 
       if (!election) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Election not found" });
+      }
+
+      const voterRows = await ctx.db
+        .selectDistinct({ userId: votes.userId })
+        .from(votes)
+        .where(eq(votes.electionId, input.id));
+
+      if (voterRows.length > 0) {
+        await ctx.db.insert(notifications).values(
+          voterRows.map((row) => ({
+            userId: row.userId,
+            type: "results_published",
+            title: "Results published",
+            message: `Results are now available for "${election.title}"`,
+            metadata: { electionId: election.id },
+          }))
+        );
       }
 
       return election;
