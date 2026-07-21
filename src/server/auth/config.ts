@@ -6,6 +6,7 @@ import { user, session, account, verification } from "@/server/db/schema";
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendChangeEmailConfirmationEmail,
 } from "@/features/auth/emails/send-auth-emails";
 
 export const auth = betterAuth({
@@ -45,6 +46,12 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "active",
         input: false,
+      },
+    },
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendChangeEmailConfirmationEmail(user.email, url, user.name, newEmail);
       },
     },
   },
