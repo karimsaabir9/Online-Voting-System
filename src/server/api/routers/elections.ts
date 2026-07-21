@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, count } from "drizzle-orm";
+import { eq, count, and, ilike } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
@@ -8,6 +8,7 @@ import { createElectionSchema, updateElectionSchema } from "@/schemas/election";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
 import { logActivity } from "@/server/activity-log";
+import { effectiveStatusCondition } from "@/server/election-status-sql";
 
 function toWriteValues(input: {
   title: string;
@@ -41,19 +42,34 @@ export const electionsRouter = createTRPCRouter({
       z.object({
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(1).max(100).default(10),
+        search: z.string().trim().min(1).optional(),
+        status: z
+          .enum(["all", "draft", "upcoming", "active", "ended", "closed"])
+          .default("all"),
       })
     )
     .query(async ({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize;
+      const now = new Date();
+
+      const conditions = [];
+      if (input.search) {
+        conditions.push(ilike(elections.title, `%${input.search}%`));
+      }
+      if (input.status !== "all") {
+        conditions.push(effectiveStatusCondition(input.status, now));
+      }
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
       const [items, totalRow] = await Promise.all([
         ctx.db.query.elections.findMany({
+          where: whereClause,
           orderBy: (fields, { desc }) => [desc(fields.createdAt)],
           limit: input.pageSize,
           offset,
           with: { candidates: { columns: { id: true } } },
         }),
-        ctx.db.select({ total: count() }).from(elections),
+        ctx.db.select({ total: count() }).from(elections).where(whereClause),
       ]);
 
       return {

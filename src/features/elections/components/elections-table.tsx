@@ -2,12 +2,20 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { trpc } from "@/lib/trpc/client"
 import { ElectionStatusBadge } from "./election-status-badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -38,13 +46,29 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "active", label: "Active" },
+  { value: "ended", label: "Ended" },
+  { value: "closed", label: "Closed" },
+] as const
+
 export function ElectionsTable() {
   const [page, setPage] = React.useState(1)
+  const [search, setSearch] = React.useState("")
+  const [status, setStatus] = React.useState<(typeof STATUS_OPTIONS)[number]["value"]>("all")
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null)
   const pageSize = 10
 
   const utils = trpc.useUtils()
-  const { data, isLoading } = trpc.elections.list.useQuery({ page, pageSize })
+  const { data, isLoading } = trpc.elections.list.useQuery({
+    page,
+    pageSize,
+    search: search.trim() || undefined,
+    status,
+  })
 
   const deleteMutation = trpc.elections.delete.useMutation({
     onSuccess: async () => {
@@ -74,110 +98,158 @@ export function ElectionsTable() {
     onError: (error) => toast.error(error.message),
   })
 
-  if (isLoading) {
-    return <p className="text-muted-foreground text-sm">Loading elections…</p>
-  }
-
-  if (!data || data.items.length === 0) {
-    return <p className="text-muted-foreground text-sm">No elections yet.</p>
-  }
-
-  const totalPages = Math.max(1, Math.ceil(data.total / pageSize))
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1
 
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Start</TableHead>
-            <TableHead>End</TableHead>
-            <TableHead>Candidates</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.items.map((election) => (
-            <TableRow key={election.id}>
-              <TableCell>
-                <Link href={`/admin/elections/${election.id}`} className="font-medium hover:underline">
-                  {election.title}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <ElectionStatusBadge election={election} />
-              </TableCell>
-              <TableCell>{election.startDate.toLocaleDateString()}</TableCell>
-              <TableCell>{election.endDate.toLocaleDateString()}</TableCell>
-              <TableCell>{election.candidateCount}</TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button variant="ghost" size="icon-sm">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      render={<Link href={`/admin/elections/${election.id}`}>Edit</Link>}
-                    />
-                    {election.status === "draft" && (
-                      <DropdownMenuItem onClick={() => publishMutation.mutate({ id: election.id })}>
-                        Publish
-                      </DropdownMenuItem>
-                    )}
-                    {election.status !== "draft" && election.status !== "closed" && (
-                      <DropdownMenuItem onClick={() => closeMutation.mutate({ id: election.id })}>
-                        Close
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setPendingDeleteId(election.id)}
-                    >
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
+          <Input
+            placeholder="Search by title…"
+            className="pl-8"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+          />
+        </div>
+        <Select
+          value={status}
+          onValueChange={(value) => {
+            setStatus(value as (typeof STATUS_OPTIONS)[number]["value"])
+            setPage(1)
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="text-muted-foreground px-2 text-sm">
-                Page {page} of {totalPages}
-              </span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+      {isLoading && <p className="text-muted-foreground text-sm">Loading elections…</p>}
+
+      {!isLoading && (!data || data.items.length === 0) && (
+        <p className="text-muted-foreground text-sm">No elections match your filters.</p>
       )}
 
-      <Dialog open={pendingDeleteId !== null} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      {!isLoading && data && data.items.length > 0 && (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Start</TableHead>
+                <TableHead>End</TableHead>
+                <TableHead>Candidates</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.items.map((election) => (
+                <TableRow key={election.id}>
+                  <TableCell>
+                    <Link
+                      href={`/admin/elections/${election.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {election.title}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <ElectionStatusBadge election={election} />
+                  </TableCell>
+                  <TableCell>{election.startDate.toLocaleDateString()}</TableCell>
+                  <TableCell>{election.endDate.toLocaleDateString()}</TableCell>
+                  <TableCell>{election.candidateCount}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" size="icon-sm">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          render={<Link href={`/admin/elections/${election.id}`}>Edit</Link>}
+                        />
+                        {election.status === "draft" && (
+                          <DropdownMenuItem
+                            onClick={() => publishMutation.mutate({ id: election.id })}
+                          >
+                            Publish
+                          </DropdownMenuItem>
+                        )}
+                        {election.status !== "draft" && election.status !== "closed" && (
+                          <DropdownMenuItem
+                            onClick={() => closeMutation.mutate({ id: election.id })}
+                          >
+                            Close
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setPendingDeleteId(election.id)}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-muted-foreground px-2 text-sm">
+                    Page {page} of {totalPages}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className={
+                      page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
+      )}
+
+      <Dialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete election?</DialogTitle>
             <DialogDescription>
-              This permanently deletes the election and all of its candidates. This cannot be undone.
+              This permanently deletes the election and all of its candidates. This cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
