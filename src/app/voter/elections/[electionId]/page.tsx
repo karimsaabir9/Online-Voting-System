@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc/client"
 import { CandidateCard } from "@/features/voting/components/candidate-card"
 import { VoteForm } from "@/features/voting/components/vote-form"
 import { VoteConfirmationCard } from "@/features/voting/components/vote-confirmation-card"
+import { VoterResultsSection } from "@/features/results/components/voter-results-section"
 import { Badge } from "@/components/ui/badge"
 import type { EffectiveElectionStatus } from "@/lib/election-status"
 
@@ -84,6 +85,8 @@ export default function VoterElectionDetailPage() {
           This election is not currently open for voting.
         </p>
       )}
+
+      <VoterResultsSection electionId={election.id} />
     </div>
   )
 }
