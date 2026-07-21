@@ -2,11 +2,13 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { trpc } from "@/lib/trpc/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -25,6 +27,7 @@ import {
 } from "@/components/ui/dialog"
 
 export function CandidatesTable({ electionId }: { electionId: string }) {
+  const [search, setSearch] = React.useState("")
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null)
   const utils = trpc.useUtils()
 
@@ -50,60 +53,81 @@ export function CandidatesTable({ electionId }: { electionId: string }) {
     return <p className="text-muted-foreground text-sm">No candidates yet.</p>
   }
 
+  const filtered = data.items.filter((candidate) =>
+    candidate.fullName.toLowerCase().includes(search.trim().toLowerCase())
+  )
+
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Party</TableHead>
-            <TableHead>Position</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.items.map((candidate) => (
-            <TableRow key={candidate.id}>
-              <TableCell>
-                <Link
-                  href={`/admin/elections/${electionId}/candidates/${candidate.id}`}
-                  className="font-medium hover:underline"
-                >
-                  {candidate.fullName}
-                </Link>
-              </TableCell>
-              <TableCell>{candidate.politicalParty ?? "—"}</TableCell>
-              <TableCell>{candidate.position ?? "—"}</TableCell>
-              <TableCell>
-                <Badge variant={candidate.status === "active" ? "default" : "outline"}>
-                  {candidate.status === "active" ? "Active" : "Withdrawn"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <Link href={`/admin/elections/${electionId}/candidates/${candidate.id}`} />
-                  }
-                >
-                  Edit
-                </Button>{" "}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setPendingDeleteId(candidate.id)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="relative max-w-xs">
+        <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
+        <Input
+          placeholder="Search by name…"
+          className="pl-8"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
-      <Dialog open={pendingDeleteId !== null} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      {filtered.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No candidates match your search.</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Party</TableHead>
+              <TableHead>Position</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((candidate) => (
+              <TableRow key={candidate.id}>
+                <TableCell>
+                  <Link
+                    href={`/admin/elections/${electionId}/candidates/${candidate.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {candidate.fullName}
+                  </Link>
+                </TableCell>
+                <TableCell>{candidate.politicalParty ?? "—"}</TableCell>
+                <TableCell>{candidate.position ?? "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={candidate.status === "active" ? "default" : "outline"}>
+                    {candidate.status === "active" ? "Active" : "Withdrawn"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <Link href={`/admin/elections/${electionId}/candidates/${candidate.id}`} />
+                    }
+                  >
+                    Edit
+                  </Button>{" "}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setPendingDeleteId(candidate.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      <Dialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete candidate?</DialogTitle>
