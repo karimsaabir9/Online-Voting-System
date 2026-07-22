@@ -5,6 +5,7 @@ import { electionsRouter } from "@/server/api/routers/elections";
 import { candidatesRouter } from "@/server/api/routers/candidates";
 import { votingRouter } from "@/server/api/routers/voting";
 import { notificationsRouter } from "@/server/api/routers/notifications";
+import { usersRouter } from "@/server/api/routers/users";
 
 export const appRouter = createTRPCRouter({
   health: healthRouter,
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   candidates: candidatesRouter,
   voting: votingRouter,
   notifications: notificationsRouter,
+  users: usersRouter,
 });
 
 export type AppRouter = typeof appRouter;
