@@ -5,14 +5,13 @@ import { usePathname } from "next/navigation"
 import { Vote } from "lucide-react"
 
 import { ThemeToggle } from "@/components/shared/theme-toggle"
-import { LogoutButton } from "@/features/auth/components/logout-button"
+import { UserMenu } from "@/components/shared/user-menu"
 import { cn } from "@/lib/utils"
 
 const NAV_LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/elections", label: "Elections" },
   { href: "/admin/users", label: "Users" },
-  { href: "/settings", label: "Settings" },
 ]
 
 export function AdminNav() {
@@ -28,7 +27,7 @@ export function AdminNav() {
         <nav className="flex items-center gap-4">
           {NAV_LINKS.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className={cn(
                 "text-sm font-medium",
@@ -44,7 +43,7 @@ export function AdminNav() {
       </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <LogoutButton />
+        <UserMenu />
       </div>
     </header>
   )

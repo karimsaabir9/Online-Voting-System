@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Vote } from "lucide-react"
 
 import { ThemeToggle } from "@/components/shared/theme-toggle"
-import { LogoutButton } from "@/features/auth/components/logout-button"
+import { UserMenu } from "@/components/shared/user-menu"
 import { NotificationBell } from "@/features/notifications/components/notification-bell"
 import { cn } from "@/lib/utils"
 
@@ -13,7 +13,6 @@ const NAV_LINKS = [
   { href: "/voter/dashboard", label: "Dashboard" },
   { href: "/voter/elections", label: "Elections" },
   { href: "/voter/votes", label: "My Votes" },
-  { href: "/settings", label: "Settings" },
 ]
 
 export function VoterNav() {
@@ -29,7 +28,7 @@ export function VoterNav() {
         <nav className="flex items-center gap-4">
           {NAV_LINKS.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
               className={cn(
                 "text-sm font-medium",
@@ -46,7 +45,7 @@ export function VoterNav() {
       <div className="flex items-center gap-2">
         <NotificationBell />
         <ThemeToggle />
-        <LogoutButton />
+        <UserMenu />
       </div>
     </header>
   )

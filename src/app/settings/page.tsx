@@ -1,11 +1,12 @@
 import Link from "next/link"
-import { ChevronLeft, Mail, Shield, User as UserIcon } from "lucide-react"
+import { CheckCircle2, ChevronLeft, Mail, Shield, User as UserIcon, XCircle } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { getServerSession } from "@/server/auth/get-session"
 import { ChangePasswordForm } from "@/features/auth/components/change-password-form"
 import { ProfileForm } from "@/features/auth/components/profile-form"
 import { ChangeEmailForm } from "@/features/auth/components/change-email-form"
+import { ResendVerificationButton } from "@/features/auth/components/resend-verification-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -18,12 +19,25 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-export default async function SettingsPage() {
+type SettingsTab = "profile" | "email" | "security"
+
+const VALID_TABS: SettingsTab[] = ["profile", "email", "security"]
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const session = await getServerSession()
 
   if (!session || session.user.status !== "active") {
     redirect("/login")
   }
+
+  const { tab } = await searchParams
+  const activeTab: SettingsTab = VALID_TABS.includes(tab as SettingsTab)
+    ? (tab as SettingsTab)
+    : "profile"
 
   const { user } = session
   const dashboardHref = user.role === "admin" ? "/admin/dashboard" : "/voter/dashboard"
@@ -47,26 +61,17 @@ export default async function SettingsPage() {
           Back to dashboard
         </Link>
 
-        <div className="flex items-center gap-4">
-          <Avatar size="lg" className="size-16 sm:size-20">
-            <AvatarImage src={user.image ?? undefined} alt={user.name} />
-            <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
-              <Badge variant={user.role === "admin" ? "default" : "outline"}>
-                {user.role === "admin" ? "Admin" : "Voter"}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground text-sm">{user.email}</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground text-sm">
+            Manage your profile, email, and account security.
+          </p>
         </div>
       </div>
 
       <Separator />
 
-      <Tabs defaultValue="profile">
+      <Tabs defaultValue={activeTab}>
         <TabsList variant="line" className="h-auto w-full justify-start border-b p-0">
           <TabsTrigger value="profile" className="gap-1.5 px-3 py-2">
             <UserIcon className="size-4" />
@@ -82,11 +87,29 @@ export default async function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="mt-6">
+        <TabsContent value="profile" className="mt-6 space-y-6">
+          <Card>
+            <CardContent className="flex items-center gap-4 pt-6">
+              <Avatar size="lg" className="size-16">
+                <AvatarImage src={user.image ?? undefined} alt={user.name} />
+                <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-lg font-semibold">{user.name}</p>
+                  <Badge variant={user.role === "admin" ? "default" : "outline"}>
+                    {user.role === "admin" ? "Admin" : "Voter"}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground text-sm">{user.email}</p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Update your name and avatar.</CardDescription>
+              <CardTitle>Edit profile</CardTitle>
+              <CardDescription>Update your profile picture and name.</CardDescription>
             </CardHeader>
             <CardContent>
               <ProfileForm name={user.name} image={user.image ?? null} />
@@ -94,10 +117,34 @@ export default async function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="email" className="mt-6">
+        <TabsContent value="email" className="mt-6 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Email address</CardTitle>
+              <CardDescription>The email associated with your account.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium">{user.email}</span>
+                {user.emailVerified ? (
+                  <Badge variant="default" className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="size-3.5" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="size-3.5" />
+                    Not verified
+                  </Badge>
+                )}
+              </div>
+              {!user.emailVerified && <ResendVerificationButton email={user.email} />}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Change email</CardTitle>
               <CardDescription>
                 Change the email for {user.email}. You&apos;ll need to confirm from your
                 current address.
