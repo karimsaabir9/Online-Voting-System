@@ -6,6 +6,7 @@ import { Vote } from "lucide-react"
 
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { LogoutButton } from "@/features/auth/components/logout-button"
+import { NotificationBell } from "@/features/notifications/components/notification-bell"
 import { cn } from "@/lib/utils"
 
 const NAV_LINKS = [
@@ -43,6 +44,7 @@ export function VoterNav() {
         </nav>
       </div>
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <ThemeToggle />
         <LogoutButton />
       </div>
