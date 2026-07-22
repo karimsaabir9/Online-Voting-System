@@ -71,7 +71,7 @@ export default async function SettingsPage({
 
       <Separator />
 
-      <Tabs defaultValue={activeTab}>
+      <Tabs key={activeTab} defaultValue={activeTab}>
         <TabsList variant="line" className="h-auto w-full justify-start border-b p-0">
           <TabsTrigger value="profile" className="gap-1.5 px-3 py-2">
             <UserIcon className="size-4" />
