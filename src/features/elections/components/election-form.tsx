@@ -73,10 +73,10 @@ export function ElectionForm({ election }: ElectionFormProps) {
   })
 
   const createMutation = trpc.elections.create.useMutation({
-    onSuccess: async (created) => {
+    onSuccess: async () => {
       await utils.elections.list.invalidate()
       toast.success("Election created")
-      router.push(`/admin/elections/${created.id}`)
+      router.push("/admin/elections")
     },
     onError: (error) => toast.error(error.message),
   })
