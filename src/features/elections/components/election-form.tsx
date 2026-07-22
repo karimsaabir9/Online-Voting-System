@@ -45,6 +45,8 @@ type ElectionFormProps = {
     rules: string | null
     instructions: string | null
   }
+  onSuccess?: () => void
+  onCancel?: () => void
 }
 
 function toDatetimeLocal(date: Date) {
@@ -52,7 +54,7 @@ function toDatetimeLocal(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-export function ElectionForm({ election }: ElectionFormProps) {
+export function ElectionForm({ election, onSuccess, onCancel }: ElectionFormProps) {
   const router = useRouter()
   const utils = trpc.useUtils()
 
@@ -76,7 +78,11 @@ export function ElectionForm({ election }: ElectionFormProps) {
     onSuccess: async () => {
       await utils.elections.list.invalidate()
       toast.success("Election created")
-      router.push("/admin/elections")
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push("/admin/elections")
+      }
     },
     onError: (error) => toast.error(error.message),
   })
@@ -258,9 +264,16 @@ export function ElectionForm({ election }: ElectionFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : election ? "Save changes" : "Create election"}
-        </Button>
+        <div className="flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : election ? "Save changes" : "Create election"}
+          </Button>
+        </div>
       </form>
     </Form>
   )
