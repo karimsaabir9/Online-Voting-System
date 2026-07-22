@@ -1,11 +1,13 @@
 import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Mail, Shield, User as UserIcon } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { getServerSession } from "@/server/auth/get-session"
 import { ChangePasswordForm } from "@/features/auth/components/change-password-form"
 import { ProfileForm } from "@/features/auth/components/profile-form"
 import { ChangeEmailForm } from "@/features/auth/components/change-email-form"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
@@ -13,6 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default async function SettingsPage() {
   const session = await getServerSession()
@@ -21,50 +25,102 @@ export default async function SettingsPage() {
     redirect("/login")
   }
 
-  const dashboardHref =
-    session.user.role === "admin" ? "/admin/dashboard" : "/voter/dashboard"
+  const { user } = session
+  const dashboardHref = user.role === "admin" ? "/admin/dashboard" : "/voter/dashboard"
+  const initials =
+    user.name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U"
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 p-6">
-      <Link
-        href={dashboardHref}
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium"
-      >
-        <ChevronLeft className="size-4" />
-        Back to dashboard
-      </Link>
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Update your name and avatar.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProfileForm name={session.user.name} image={session.user.image ?? null} />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Email address</CardTitle>
-          <CardDescription>
-            Change the email for {session.user.email}. You&apos;ll need to confirm from
-            your current address.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChangeEmailForm />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Change password</CardTitle>
-          <CardDescription>
-            Update the password for {session.user.email}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChangePasswordForm />
-        </CardContent>
-      </Card>
+    <div className="mx-auto w-full max-w-3xl space-y-8 p-6 sm:p-8">
+      <div className="space-y-6">
+        <Link
+          href={dashboardHref}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium transition-colors"
+        >
+          <ChevronLeft className="size-4" />
+          Back to dashboard
+        </Link>
+
+        <div className="flex items-center gap-4">
+          <Avatar size="lg" className="size-16 sm:size-20">
+            <AvatarImage src={user.image ?? undefined} alt={user.name} />
+            <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
+              <Badge variant={user.role === "admin" ? "default" : "outline"}>
+                {user.role === "admin" ? "Admin" : "Voter"}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground text-sm">{user.email}</p>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <Tabs defaultValue="profile">
+        <TabsList variant="line" className="h-auto w-full justify-start border-b p-0">
+          <TabsTrigger value="profile" className="gap-1.5 px-3 py-2">
+            <UserIcon className="size-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="email" className="gap-1.5 px-3 py-2">
+            <Mail className="size-4" />
+            Email
+          </TabsTrigger>
+          <TabsTrigger value="security" className="gap-1.5 px-3 py-2">
+            <Shield className="size-4" />
+            Security
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>Update your name and avatar.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProfileForm name={user.name} image={user.image ?? null} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="email" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email address</CardTitle>
+              <CardDescription>
+                Change the email for {user.email}. You&apos;ll need to confirm from your
+                current address.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChangeEmailForm />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Change password</CardTitle>
+              <CardDescription>Update the password for {user.email}.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChangePasswordForm />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
