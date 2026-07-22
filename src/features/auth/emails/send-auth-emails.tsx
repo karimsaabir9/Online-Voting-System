@@ -1,4 +1,4 @@
-import { sendEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/mailer";
 import { VerifyEmailTemplate } from "./verify-email-template";
 import { ResetPasswordTemplate } from "./reset-password-template";
 import { ChangeEmailTemplate } from "./change-email-template";
