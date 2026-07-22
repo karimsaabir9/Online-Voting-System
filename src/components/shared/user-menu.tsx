@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { LogOut, Settings, User as UserIcon } from "lucide-react"
+import { LogOut, Settings } from "lucide-react"
 
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -69,10 +69,6 @@ export function UserMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/settings?tab=profile" />}>
-          <UserIcon className="size-4" />
-          My Profile
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href="/settings?tab=security" />}>
           <Settings className="size-4" />
           Settings
         </DropdownMenuItem>
