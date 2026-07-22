@@ -3,9 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
+import { toast } from "sonner"
 
 import { trpc } from "@/lib/trpc/client"
+import { authClient } from "@/lib/auth-client"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -29,6 +32,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const ROLE_OPTIONS = [
   { value: "all", label: "All roles" },
@@ -47,8 +58,11 @@ export function UsersTable() {
   const [search, setSearch] = React.useState("")
   const [role, setRole] = React.useState<(typeof ROLE_OPTIONS)[number]["value"]>("all")
   const [status, setStatus] = React.useState<(typeof STATUS_OPTIONS)[number]["value"]>("all")
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null)
   const pageSize = 10
 
+  const { data: session } = authClient.useSession()
+  const utils = trpc.useUtils()
   const { data, isLoading } = trpc.users.list.useQuery({
     page,
     pageSize,
@@ -57,7 +71,20 @@ export function UsersTable() {
     status,
   })
 
+  const deleteMutation = trpc.users.remove.useMutation({
+    onSuccess: async () => {
+      await utils.users.list.invalidate()
+      toast.success("User deleted")
+      setPendingDeleteId(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+      setPendingDeleteId(null)
+    },
+  })
+
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1
+  const pendingDeleteUser = data?.items.find((item) => item.id === pendingDeleteId)
 
   return (
     <div className="space-y-4">
@@ -127,32 +154,48 @@ export function UsersTable() {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <Link
-                      href={`/admin/users/${item.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {item.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{item.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={item.role === "admin" ? "default" : "outline"}>
-                      {item.role === "admin" ? "Admin" : "Voter"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.status === "active" ? "default" : "destructive"}>
-                      {item.status === "active" ? "Active" : "Suspended"}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {data.items.map((item) => {
+                const isSelf = item.id === session?.user.id
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Link
+                        href={`/admin/users/${item.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {item.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{item.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={item.role === "admin" ? "default" : "outline"}>
+                        {item.role === "admin" ? "Admin" : "Voter"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={item.status === "active" ? "default" : "destructive"}>
+                        {item.status === "active" ? "Active" : "Suspended"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={isSelf}
+                        title={isSelf ? "You cannot delete your own account" : undefined}
+                        onClick={() => setPendingDeleteId(item.id)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
 
@@ -183,6 +226,34 @@ export function UsersTable() {
           )}
         </>
       )}
+
+      <Dialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete user?</DialogTitle>
+            <DialogDescription>
+              {pendingDeleteUser
+                ? `This permanently deletes "${pendingDeleteUser.name}" (${pendingDeleteUser.email}). This cannot be undone.`
+                : "This permanently deletes the user. This cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDeleteId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => pendingDeleteId && deleteMutation.mutate({ id: pendingDeleteId })}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

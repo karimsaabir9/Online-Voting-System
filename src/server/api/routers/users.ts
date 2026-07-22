@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "@/server/api/trpc";
 import { user, votes } from "@/server/db/schema";
 import type { db as dbType } from "@/server/db";
+import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
 
 type Database = typeof dbType;
 
@@ -187,5 +188,45 @@ export const usersRouter = createTRPCRouter({
         .returning();
 
       return updated;
+    }),
+
+  remove: adminProcedure
+    .input(z.object({ id: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.id === ctx.session.user.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot delete your own account",
+        });
+      }
+
+      const target = await ctx.db.query.user.findFirst({ where: eq(user.id, input.id) });
+
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
+
+      if (target.role === "admin") {
+        await assertNotLastActiveAdmin(ctx.db, input.id);
+      }
+
+      try {
+        const [deleted] = await ctx.db.delete(user).where(eq(user.id, input.id)).returning();
+
+        if (!deleted) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        return deleted;
+      } catch (error) {
+        if (getPostgresErrorCode(error) === POSTGRES_ERROR_CODES.RESTRICT_VIOLATION) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "Cannot delete a user who has cast votes or created elections. Suspend the account instead.",
+          });
+        }
+        throw error;
+      }
     }),
 });
