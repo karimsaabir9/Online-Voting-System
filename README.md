@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Online Voting System
 
-## Getting Started
+A modern, full-stack web application for running secure online elections — from candidate nominations and voter registration to live results and post-election reporting.
 
-First, run the development server:
+Admins can create and manage elections, register candidates, and monitor turnout in real time, while voters can browse active elections, cast votes securely, and track results — all from a responsive dashboard.
+
+## Features
+
+- **Role-based dashboards** — separate experiences for Admins and Voters
+- **Election management** — create, schedule, and manage the full lifecycle of elections
+- **Candidate management** — add candidates with photos, bios, and manifestos (via Cloudinary uploads)
+- **Secure voting flow** — one vote per voter per election, enforced server-side
+- **Live results & analytics** — real-time vote tallies and result charts
+- **User management** — admin tools for managing, suspending, and reviewing voter accounts
+- **Authentication** — email/password auth with email verification and password reset (via Better Auth)
+- **Notifications** — in-app notifications for election and account activity
+- **Audit & activity logs** — track key actions for accountability
+- **Responsive UI** — built with Tailwind CSS and accessible, themeable components
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org) (App Router) |
+| Language | TypeScript |
+| UI | React 19, Tailwind CSS 4, Base UI, Lucide Icons |
+| API Layer | [tRPC](https://trpc.io) + TanStack Query |
+| Database | [Neon Postgres](https://neon.tech) (serverless) |
+| ORM | [Drizzle ORM](https://orm.drizzle.team) |
+| Auth | [Better Auth](https://better-auth.com) |
+| File Uploads | [Cloudinary](https://cloudinary.com) |
+| Email | Nodemailer via Gmail SMTP |
+| Forms & Validation | React Hook Form + Zod |
+| Charts | Recharts |
+| Package Manager | pnpm |
+
+## Installation
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org) 20+
+- [pnpm](https://pnpm.io)
+- A [Neon](https://neon.tech) Postgres database
+- A [Cloudinary](https://cloudinary.com) account
+- A Gmail account with an [App Password](https://myaccount.google.com/apppasswords) enabled
+
+### Steps
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Clone the repository
+git clone https://github.com/karimsaabir9/Online-Voting-System.git
+cd Online-Voting-System
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Set up environment variables (see below)
+cp .env.example .env.local
+
+# 4. Push the database schema
+pnpm db:push
+
+# 5. Seed the first admin account
+pnpm db:seed
+
+# 6. Start the development server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file in the project root (see `.env.example` for reference):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Neon Postgres (pooled connection string, from the Neon dashboard)
+DATABASE_URL=
 
-## Learn More
+# Better Auth (generate a random 32+ char secret, e.g. `openssl rand -base64 32`)
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Gmail SMTP (transactional email — verification, password reset)
+# GMAIL_APP_PASSWORD is a 16-character App Password generated at
+# https://myaccount.google.com/apppasswords (requires 2-Step Verification enabled)
+GMAIL_USER=
+GMAIL_APP_PASSWORD=
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Cloudinary (candidate photo / election banner uploads)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Seed script — creates the first Admin account
+ADMIN_SEED_EMAIL=
+ADMIN_SEED_PASSWORD=
+```
 
-## Deploy on Vercel
+## Running Locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+To use the app end-to-end locally, run `pnpm db:push` to sync the schema and `pnpm db:seed` to create your first admin login before starting the dev server.
+
+## Project Structure
+
+```
+src/
+├── app/                  # Next.js App Router routes
+│   ├── (auth)/           # Login, register, password reset, email verification
+│   ├── admin/            # Admin dashboard, elections, users
+│   ├── voter/            # Voter dashboard, elections, votes, notifications
+│   ├── settings/         # Account/profile settings
+│   ├── suspended/        # Suspended-account screen
+│   └── api/              # API routes (tRPC, auth, admin endpoints)
+├── components/           # Shared UI components (ui/, shared/)
+├── features/             # Feature modules (auth, elections, candidates,
+│                         #   voting, results, notifications, users, dashboard, landing)
+├── server/
+│   ├── api/routers/      # tRPC routers (elections, candidates, voting, users, ...)
+│   ├── auth/             # Better Auth configuration
+│   └── db/               # Drizzle schema, relations, and seed script
+├── lib/                  # Shared utilities (tRPC client, helpers)
+├── providers/            # React context providers
+└── schemas/              # Zod validation schemas
+```
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `pnpm dev` | Start the development server |
+| `pnpm build` | Build the app for production |
+| `pnpm start` | Start the production server |
+| `pnpm db:generate` | Generate Drizzle migration files from the schema |
+| `pnpm db:push` | Push the current schema to the database |
+| `pnpm db:studio` | Open Drizzle Studio to browse/edit data |
+| `pnpm db:seed` | Seed the database with the initial admin account |
+
+## Future Improvements
+
+- Multi-factor authentication for voters and admins
+- Blockchain-backed vote verification for enhanced auditability
+- Bulk candidate/voter import via CSV
+- Downloadable PDF/CSV election reports
+- Multi-language (i18n) support
+- Automated end-to-end test suite
+- Public API for third-party election monitoring
