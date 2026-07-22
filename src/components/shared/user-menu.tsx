@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -60,10 +61,12 @@ export function UserMenu() {
         }
       />
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex flex-col gap-0.5 px-1.5 py-1.5">
-          <span className="text-foreground text-sm font-medium">{user.name}</span>
-          <span className="text-muted-foreground truncate text-xs">{user.email}</span>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex flex-col gap-0.5 px-1.5 py-1.5">
+            <span className="text-foreground text-sm font-medium">{user.name}</span>
+            <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/settings?tab=profile" />}>
           <UserIcon className="size-4" />
