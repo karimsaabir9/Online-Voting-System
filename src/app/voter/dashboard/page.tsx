@@ -26,7 +26,9 @@ export default async function VoterDashboardPage() {
             <CardDescription>Browse active and upcoming elections.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button render={<Link href="/voter/elections" />}>Browse elections</Button>
+            <Button render={<Link href="/voter/elections" />} nativeButton={false}>
+              Browse elections
+            </Button>
           </CardContent>
         </Card>
         <Card>
@@ -38,7 +40,7 @@ export default async function VoterDashboardPage() {
             <CardDescription>Review the elections you&apos;ve voted in.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" render={<Link href="/voter/votes" />}>
+            <Button variant="outline" render={<Link href="/voter/votes" />} nativeButton={false}>
               View voting history
             </Button>
           </CardContent>

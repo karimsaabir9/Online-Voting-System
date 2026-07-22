@@ -24,10 +24,12 @@ export default async function Home() {
           Online Voting System
         </div>
         <div className="flex items-center gap-2">
-          <Button render={<Link href="/login" />} variant="outline">
+          <Button render={<Link href="/login" />} nativeButton={false} variant="outline">
             Log in
           </Button>
-          <Button render={<Link href="/register" />}>Register</Button>
+          <Button render={<Link href="/register" />} nativeButton={false}>
+            Register
+          </Button>
           <ThemeToggle />
         </div>
       </header>

@@ -47,7 +47,11 @@ export function VoterDashboardContent() {
                     Closes {election.endDate.toLocaleString()}
                   </p>
                 </div>
-                <Button size="sm" render={<Link href={`/voter/elections/${election.id}`} />}>
+                <Button
+                  size="sm"
+                  render={<Link href={`/voter/elections/${election.id}`} />}
+                  nativeButton={false}
+                >
                   Vote now
                 </Button>
               </div>

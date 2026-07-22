@@ -25,6 +25,7 @@ export function AdminResultsSection({ electionId }: { electionId: string }) {
             variant="outline"
             size="sm"
             render={<a href={`/api/admin/elections/${electionId}/export`} />}
+            nativeButton={false}
           >
             Export CSV
           </Button>

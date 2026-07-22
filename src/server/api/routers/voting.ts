@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, ne, gte, lte, notInArray, inArray } from "drizzle-orm";
+import { eq, and, notInArray, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
@@ -9,6 +9,7 @@ import { getClientIp } from "@/lib/request-info";
 import { computeElectionResults } from "@/server/results";
 import { getPostgresErrorCode, POSTGRES_ERROR_CODES } from "@/lib/db-errors";
 import { logActivity } from "@/server/activity-log";
+import { effectiveStatusCondition } from "@/server/election-status-sql";
 
 export const votingRouter = createTRPCRouter({
   listElections: protectedProcedure.query(async ({ ctx }) => {
@@ -156,10 +157,7 @@ export const votingRouter = createTRPCRouter({
 
     const openElectionsConditions = [
       eq(elections.visibility, "public"),
-      ne(elections.status, "draft"),
-      ne(elections.status, "closed"),
-      lte(elections.startDate, now),
-      gte(elections.endDate, now),
+      effectiveStatusCondition("active", now),
     ];
     if (votedIds.length > 0) {
       openElectionsConditions.push(notInArray(elections.id, votedIds));

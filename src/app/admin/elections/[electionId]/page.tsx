@@ -42,6 +42,7 @@ export default async function EditElectionPage({
         <Button
           size="sm"
           render={<Link href={`/admin/elections/${election.id}/candidates/new`} />}
+          nativeButton={false}
         >
           <Plus className="size-4" />
           Add candidate

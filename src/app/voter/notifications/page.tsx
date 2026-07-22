@@ -49,7 +49,9 @@ export default function VoterNotificationsPage() {
             <Link
               key={notification.id}
               href={
-                notification.electionId ? `/voter/elections/${notification.electionId}` : "#"
+                notification.electionId
+                  ? `/voter/elections/${notification.electionId}`
+                  : "/voter/notifications"
               }
               onClick={() => {
                 if (!notification.isRead) {
