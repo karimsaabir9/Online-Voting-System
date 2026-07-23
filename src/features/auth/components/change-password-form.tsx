@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { changePasswordSchema, type ChangePasswordInput } from "@/schemas/auth"
@@ -18,7 +19,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ redirectTo }: { redirectTo: string }) {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<ChangePasswordInput>({
@@ -47,7 +49,8 @@ export function ChangePasswordForm() {
     }
 
     toast.success("Password changed")
-    form.reset()
+    router.push(redirectTo)
+    router.refresh()
   }
 
   return (

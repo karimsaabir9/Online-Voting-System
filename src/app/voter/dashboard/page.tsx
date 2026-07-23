@@ -1,51 +1,33 @@
-import Link from "next/link"
-import { History, Vote } from "lucide-react"
-
 import { getServerSession } from "@/server/auth/get-session"
 import { VoterDashboardContent } from "@/features/dashboard/components/voter-dashboard-content"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default async function VoterDashboardPage() {
   const session = await getServerSession()
 
+  const name = session?.user.name ?? ""
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U"
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Welcome, {session?.user.name}</h1>
-        <p className="text-muted-foreground text-sm">{session?.user.email}</p>
+    <div className="mx-auto w-full max-w-5xl flex-1 space-y-8 p-6 sm:p-8">
+      <div className="flex items-center gap-4">
+        <Avatar size="lg" className="size-16">
+          <AvatarImage src={session?.user.image ?? undefined} alt={name} />
+          <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
+        </Avatar>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome, {session?.user.name}</h1>
+          <p className="text-muted-foreground text-sm">{session?.user.email}</p>
+        </div>
       </div>
       <VoterDashboardContent />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Vote className="size-5" />
-              Elections
-            </CardTitle>
-            <CardDescription>Browse active and upcoming elections.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button render={<Link href="/voter/elections" />} nativeButton={false}>
-              Browse elections
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <History className="size-5" />
-              My Votes
-            </CardTitle>
-            <CardDescription>Review the elections you&apos;ve voted in.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" render={<Link href="/voter/votes" />} nativeButton={false}>
-              View voting history
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

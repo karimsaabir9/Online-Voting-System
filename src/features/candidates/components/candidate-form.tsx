@@ -53,9 +53,11 @@ type CandidateFormProps = {
     } | null
     status: "active" | "withdrawn"
   }
+  onSuccess?: () => void
+  onCancel?: () => void
 }
 
-export function CandidateForm({ electionId, candidate }: CandidateFormProps) {
+export function CandidateForm({ electionId, candidate, onSuccess, onCancel }: CandidateFormProps) {
   const router = useRouter()
   const utils = trpc.useUtils()
 
@@ -87,7 +89,11 @@ export function CandidateForm({ electionId, candidate }: CandidateFormProps) {
     onSuccess: async () => {
       await utils.candidates.list.invalidate({ electionId })
       toast.success("Candidate created")
-      router.push(`/admin/elections/${electionId}`)
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push(`/admin/elections/${electionId}/candidates`)
+      }
     },
     onError: (error) => toast.error(error.message),
   })
@@ -329,9 +335,16 @@ export function CandidateForm({ electionId, candidate }: CandidateFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : candidate ? "Save changes" : "Add candidate"}
-        </Button>
+        <div className="flex justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : candidate ? "Save changes" : "Add candidate"}
+          </Button>
+        </div>
       </form>
     </Form>
   )

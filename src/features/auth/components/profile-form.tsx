@@ -23,9 +23,10 @@ import {
 type ProfileFormProps = {
   name: string
   image: string | null
+  redirectTo: string
 }
 
-export function ProfileForm({ name, image }: ProfileFormProps) {
+export function ProfileForm({ name, image, redirectTo }: ProfileFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -53,6 +54,7 @@ export function ProfileForm({ name, image }: ProfileFormProps) {
     }
 
     toast.success("Profile updated")
+    router.push(redirectTo)
     router.refresh()
   }
 

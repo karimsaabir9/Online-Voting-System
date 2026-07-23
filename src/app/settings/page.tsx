@@ -112,7 +112,11 @@ export default async function SettingsPage({
               <CardDescription>Update your profile picture and name.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileForm name={user.name} image={user.image ?? null} />
+              <ProfileForm
+                name={user.name}
+                image={user.image ?? null}
+                redirectTo={dashboardHref}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -163,7 +167,7 @@ export default async function SettingsPage({
               <CardDescription>Update the password for {user.email}.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChangePasswordForm />
+              <ChangePasswordForm redirectTo={dashboardHref} />
             </CardContent>
           </Card>
         </TabsContent>
