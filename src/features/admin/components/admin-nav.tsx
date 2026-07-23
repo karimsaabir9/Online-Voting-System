@@ -21,6 +21,7 @@ const NAV_LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/elections", label: "Elections" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/votes", label: "Votes" },
 ]
 
 export function AdminNav() {
