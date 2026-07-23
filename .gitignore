@@ -42,6 +42,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# subagent-driven-development scratch state
-.superpowers/
-.claude
