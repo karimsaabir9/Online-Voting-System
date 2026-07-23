@@ -1,8 +1,25 @@
 # Online Voting System
 
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
+![tRPC](https://img.shields.io/badge/tRPC-11-2596BE?logo=trpc&logoColor=white)
+
 A modern, full-stack web application for running secure online elections — from candidate nominations and voter registration to live results and post-election reporting.
 
 Admins can create and manage elections, register candidates, and monitor turnout in real time, while voters can browse active elections, cast votes securely, and track results — all from a responsive dashboard.
+
+## Table of Contents
+
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Installation](#installation)
+- [Environment Variables](#environment-variables)
+- [Running Locally](#running-locally)
+- [Project Structure](#project-structure)
+- [Available Scripts](#available-scripts)
+- [Future Improvements](#future-improvements)
 
 ## Features
 
