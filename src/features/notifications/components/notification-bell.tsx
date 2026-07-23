@@ -45,13 +45,16 @@ export function NotificationBell() {
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-1.5 py-1">
+      <DropdownMenuContent
+        align="end"
+        className="w-[calc(100vw-2rem)] max-w-80"
+      >
+        <div className="flex items-center justify-between gap-2 px-1.5 py-1">
           <span className="text-sm font-medium">Notifications</span>
           {unreadCount > 0 && (
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground text-xs"
+              className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
               onClick={() => markAllReadMutation.mutate()}
             >
               Mark all as read
