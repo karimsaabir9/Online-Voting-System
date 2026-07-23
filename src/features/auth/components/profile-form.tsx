@@ -8,7 +8,7 @@ import { toast } from "sonner"
 
 import { updateProfileSchema, type UpdateProfileInput } from "@/schemas/auth"
 import { authClient } from "@/lib/auth-client"
-import { ImageUpload } from "@/components/shared/image-upload"
+import { AvatarUpload } from "@/components/shared/avatar-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -68,11 +68,7 @@ export function ProfileForm({ name, image, redirectTo }: ProfileFormProps) {
             <FormItem>
               <FormLabel>Avatar</FormLabel>
               <FormControl>
-                <ImageUpload
-                  folder="users/avatars"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
+                <AvatarUpload value={field.value} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
