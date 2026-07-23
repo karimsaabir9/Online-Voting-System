@@ -61,7 +61,15 @@ export const votingRouter = createTRPCRouter({
       orderBy: (fields, { desc }) => [desc(fields.votedAt)],
       with: {
         election: { columns: { id: true, title: true } },
-        candidate: { columns: { id: true, fullName: true } },
+        candidate: {
+          columns: {
+            id: true,
+            fullName: true,
+            photoUrl: true,
+            politicalParty: true,
+            position: true,
+          },
+        },
       },
     });
 

@@ -1,8 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
+import { FileCheck2 } from "lucide-react"
+import type { inferRouterOutputs } from "@trpc/server"
 
 import { trpc } from "@/lib/trpc/client"
+import type { AppRouter } from "@/server/api/root"
 import {
   Table,
   TableBody,
@@ -11,9 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { VoteConfirmationModal } from "@/features/voting/components/vote-confirmation-modal"
+
+type Vote = inferRouterOutputs<AppRouter>["voting"]["myVotes"][number]
 
 export default function MyVotesPage() {
   const { data, isLoading } = trpc.voting.myVotes.useQuery()
+  const [selectedVote, setSelectedVote] = useState<Vote | null>(null)
 
   if (isLoading) {
     return <p className="text-muted-foreground p-6 text-sm">Loading your voting history…</p>
@@ -36,6 +45,7 @@ export default function MyVotesPage() {
             <TableHead>Election</TableHead>
             <TableHead>Candidate</TableHead>
             <TableHead>Voted at</TableHead>
+            <TableHead className="text-right">Vote Confirmation</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -48,10 +58,30 @@ export default function MyVotesPage() {
               </TableCell>
               <TableCell>{vote.candidate.fullName}</TableCell>
               <TableCell>{vote.votedAt.toLocaleString()}</TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedVote(vote)}
+                >
+                  <FileCheck2 />
+                  View Confirmation
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {selectedVote && (
+        <VoteConfirmationModal
+          vote={selectedVote}
+          open={selectedVote !== null}
+          onOpenChange={(open) => {
+            if (!open) setSelectedVote(null)
+          }}
+        />
+      )}
     </div>
   )
 }
