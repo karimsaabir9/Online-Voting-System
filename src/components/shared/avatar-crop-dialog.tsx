@@ -40,6 +40,10 @@ export function AvatarCropDialog({
   React.useEffect(() => {
     if (open) return
 
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current)
+      previewTimeoutRef.current = null
+    }
     setCrop({ x: 0, y: 0 })
     setZoom(1)
     setCroppedAreaPixels(null)
@@ -49,6 +53,12 @@ export function AvatarCropDialog({
       return null
     })
   }, [open])
+
+  React.useEffect(() => {
+    return () => {
+      if (previewTimeoutRef.current) clearTimeout(previewTimeoutRef.current)
+    }
+  }, [])
 
   function handleCropComplete(_area: Area, areaPixels: Area) {
     setCroppedAreaPixels(areaPixels)
