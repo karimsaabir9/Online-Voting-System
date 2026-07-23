@@ -50,6 +50,12 @@ export default async function VerifyEmailPage({
           activate your account, then log in.
         </CardDescription>
       </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground text-sm">
+          Don&apos;t see it? Check your spam or junk folder — verification emails
+          can sometimes land there.
+        </p>
+      </CardContent>
     </Card>
   )
 }
